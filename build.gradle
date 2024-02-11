@@ -1,0 +1,89 @@
+plugins {
+    id("java")
+    id("checkstyle")
+    id("io.papermc.paperweight.userdev").version("1.5.11")
+    id("com.github.johnrengelman.shadow").version("7.1.2")
+    id("com.github.spotbugs").version("5.0.14")
+    id("xyz.jpenilla.run-paper").version("2.2.2")
+}
+
+setGroup("com.jnngl")
+setVersion("1.0")
+
+getTasks().withType(JavaCompile).configureEach() {
+    getOptions().setEncoding("UTF-8")
+}
+
+repositories() {
+    mavenCentral()
+    maven() {
+        setName("papermc-repo")
+        setUrl("https://repo.papermc.io/repository/maven-public/")
+    }
+    maven() {
+        setName("jitpack")
+        setUrl("https://jitpack.io")
+    }
+    maven() {
+        setName("sonatype")
+        setUrl("https://oss.sonatype.org/content/groups/public/")
+    }
+    maven() {
+        setName("elytrium-repo")
+        setUrl("https://maven.elytrium.net/repo/")
+    }
+}
+
+dependencies() {
+    // Minecraft APIs
+    compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.20.4-R0.1-SNAPSHOT")
+
+    // General-purpose libraries
+    compileOnly("commons-io:commons-io:2.11.0")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    implementation("io.github.classgraph:classgraph:4.8.165")
+    compileOnly("com.github.spotbugs:spotbugs:4.8.3")
+
+    // Serialization libraries
+    implementation("net.elytrium:serializer:1.1.1")
+}
+
+processResources() {
+    def props = [version: version]
+    getInputs().properties(props)
+    setFilteringCharset("UTF-8")
+    filesMatching("plugin.yml") {
+        expand(props)
+    }
+}
+
+shadowJar() {
+    getArchiveClassifier().set("")
+}
+
+checkstyle() {
+    setToolVersion("10.1")
+    setConfigFile(file("${this.getRootDir()}/config/checkstyle/checkstyle.xml"))
+    setConfigProperties("configDirectory": "${this.getRootDir()}/config/checkstyle")
+
+    // The build should immediately fail if we have errors.
+    setMaxErrors(0)
+    setMaxWarnings(0)
+}
+
+spotbugsMain() {
+    setExcludeFilter(file("${this.getRootDir()}/config/spotbugs/suppressions.xml"))
+
+    reports {
+        html {
+            getRequired().set(true)
+            getOutputLocation().set(file("${this.getBuildDir()}/reports/spotbugs/main/spotbugs.html"))
+            setStylesheet("fancy-hist.xsl")
+        }
+    }
+}
+
+reobfJar.dependsOn(shadowJar)
+assemble.dependsOn(reobfJar)

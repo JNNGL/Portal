@@ -1,0 +1,6 @@
+name: Portal
+description: Portal server
+main: com.jnngl.portal.CorePlugin
+version: ${version}
+api-version: 1.20
+load: POSTWORLD
